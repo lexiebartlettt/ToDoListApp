@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+     <ListView
+        android:id="@+id/archiveListView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" >
+    </ListView>
+     <Button
+        android:id="@+id/unarchiveSelected"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="0.2"
+        android:text="Unarchive Selected" />
+    
+        <Button
+        android:id="@+id/EmailAll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="0.2"
+        android:text="Email All" />
+        <Button
+        android:id="@+id/emailSelect"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="0.2"
+        android:text="Email Selected" />
+
+</LinearLayout>
