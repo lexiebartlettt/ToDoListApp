@@ -1,17 +1,14 @@
 package com.ualberta.lexie;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -26,32 +23,32 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 public class MainActivity extends Activity {
-	  private ListView mainListView ;  
+	  private ListView listView ;  
 	  private ArrayAdapter<ToDo> listAdapter;  
-	  public static ArrayList<ToDo> toDoList;  
-	  private Button add_button;
-	  private static final String FILENAME="saves6.sav";
-	  private static final String FILENAME2 = "save13.sav";
+	  public static ArrayList<ToDo> toDoList= new ArrayList<ToDo>();;  
+	  private static final String FILENAME="saves8.sav";
+	  private static final String FILENAME2 = "archive1.sav";
 	  int max = 0;
-	  private ArrayList<Integer> check=new ArrayList<Integer>();
-	  private int []savedints=new int[100];
+	  public static ArrayList<ToDo> mainarchived;
+
 	  
 	  /** Called when the activity is first created. */  
 	  @Override  
 	  public void onCreate(Bundle savedInstanceState) { 
 	    super.onCreate(savedInstanceState);  
 	    setContentView(R.layout.fragment_main);  
-	    toDoList= new ArrayList<ToDo>();
-	    
-	    //loadFromFile();
-	    //loadCheckFromFile();
+	   
 	    
 	    
-
-	    add_button=(Button) findViewById(R.id.addBtn);
+	    
+	    //Add Button: Adds new task to To Do List
+	    Button add_button=(Button) findViewById(R.id.addBtn);
 	    
 	    add_button.setOnClickListener(new View.OnClickListener() {
 	    	@Override
@@ -59,17 +56,23 @@ public class MainActivity extends Activity {
 	        	 addClick();
 	         }
     });
-	    mainListView = (ListView) findViewById( R.id.listView);
-	    mainListView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
+	    
+	    
+	    //When item in list is checked/unchecked this bit is called
+	    listView = (ListView) findViewById( R.id.listView);
+	    listView.setOnItemClickListener(new AdapterView.OnItemClickListener(){
 	    
 	    	public void onItemClick(AdapterView<?> listAdapter,View v, int position, long id)
 	    	{
 	    	if(toDoList.get(position).getCheck()==true){
-	    		toDoList.get(position).Check(false);
+	    		toDoList.get(position).setFalse();
+
 	    	}
 	    	else {
-	    		toDoList.get(position).Check(true);
+	    		toDoList.get(position).setTrue();
+	
 	    	}
+	    	saveInFile();
 	    	
 	    }
 	    		
@@ -77,16 +80,17 @@ public class MainActivity extends Activity {
 
 	    }
 	 
+//Creates a context menu that helps you delete To Do List items
 @Override 
 public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo){
 	super.onCreateContextMenu(menu, v,  menuInfo);
-	AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
 	String title = "Delete?";
 	menu.setHeaderTitle(title);
 	
 	menu.add(Menu.NONE,R.menu.delete_menu, Menu.NONE, "Delete");
 }
 
+//This is where it actually deletes when you press delete
 @Override
 public boolean onContextItemSelected(MenuItem item){
 	switch(item.getItemId()){
@@ -94,15 +98,19 @@ public boolean onContextItemSelected(MenuItem item){
 		AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
 		toDoList.remove(info.position);
 		listAdapter.notifyDataSetChanged();
+		saveInFile();
 		return true;
 		
 	default:
 		return super.onContextItemSelected(item);
 	}
 }
+
 //the following two functions was taken from http://developer.android.com/guide/topics/ui/menus.html
 //September 18 2014 
-//changes from the original have been made 	  
+//changes from the original have been made 
+//Creates an option menu that appears either as 3 dots in a corner or when you press corner 
+//button on newer devices
 @Override
 public boolean onCreateOptionsMenu(Menu menu) {
 	MenuInflater inflater = getMenuInflater();
@@ -110,24 +118,36 @@ public boolean onCreateOptionsMenu(Menu menu) {
 	return true;
 }
 
+
+//This is what happens when you select an item from the options menu
 @Override
 public boolean onOptionsItemSelected(MenuItem item) {
     // Handle item selection
     switch (item.getItemId()) {
         case R.id.emailItm:
+        	//This case sends you to EmailScreen1
         	Intent emailIntent= new Intent(getApplicationContext(),EmailScreen1.class);
         	startActivity(emailIntent);
             return true;
+            
         case R.id.archiveItm:
+        	//This item sends you to ArchiveScreen
         	Intent archiveIntent= new Intent(getApplicationContext(),ArchiveScreen.class);
         	startActivity(archiveIntent);
         	return true;	
-        
+        	
+        case R.id.summary:
+        	//This item sends you to Summary
+        	Intent summaryIntent = new Intent(getApplicationContext(),Summary.class);
+        	startActivity(summaryIntent);
+        	
         default:
             return super.onOptionsItemSelected(item);
     }
 }
 
+//This function is called when you press the add button 
+//It actually adds what you typed to list
  void addClick(){
     	EditText editText=(EditText)findViewById(R.id.newToDo);
 		String toDo=editText.getText().toString();
@@ -135,129 +155,37 @@ public boolean onOptionsItemSelected(MenuItem item) {
 		listAdapter.notifyDataSetChanged();
 		editText.setText("");
 		setResult(RESULT_OK);
-		//saveInFile(toDo);
+		saveInFile();
 	}
  
- /*
-	private String[] loadFromFile() {
+ 
+ //Loads toDoList from file called FILENAME
+	private void loadFromFile() {
 		try {
 			FileInputStream fis = openFileInput(FILENAME);
-			BufferedReader in = new BufferedReader(new InputStreamReader(fis));
-			String line = in.readLine();
-			while (line != null) {
-				int already=1;
-				for(int g=0;g<toDoList.size();g++){
-					if (toDoList.get(g)==line){
-						already=0;
-					}
-				}
-				if(already==1){
-				toDoList.add(line);}
-	    		//Toast.makeText(MainActivity.this,line,Toast.LENGTH_SHORT).show();
-
-				line = in.readLine();
-			}
-
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try{
-		FileOutputStream fos = new FileOutputStream(FILENAME,false);
-		FileWriter fwriter;
-		String s = "";
-		try{
-			fwriter = new FileWriter(fos.getFD());
+			InputStreamReader isr = new InputStreamReader(fis);
 			
-			fwriter.write(s);
-			fwriter.flush();
-			fwriter.close();
-		}
-		catch(Exception e){
-			e.printStackTrace();
-		}
-		finally{
-			fos.getFD().sync();
-			fos.close();
-		}
-		}catch (Exception e){
-			e.printStackTrace();
-		}
-		
-		return toDoList.toArray(new String[toDoList.size()]);
-	}
-	
-	private void loadCheckFromFile() {
-		try {
-			FileInputStream fis = openFileInput(FILENAME2);
-			BufferedReader in = new BufferedReader(new InputStreamReader(fis));
-			String line = in.readLine();
-			int already=1;
-			//line.replaceAll("\\s+", "");
-			int i =0;
-			while(line!= null){
-				
-				int p=Integer.parseInt(line);
-				savedints[i]= p;
-				i++;
-					line = in.readLine();
-				}
+			//from http://www.javacreed.com/simple-gson-example/
 			
-			File file=new File(FILENAME2);
-			file.delete();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			Gson gson= new GsonBuilder().create();
+			toDoList=gson.fromJson(isr, new TypeToken <ArrayList<ToDo>>(){}.getType());
+		}
+		//this catch catches if the file isn't found
+		catch (FileNotFoundException e){
 			e.printStackTrace();
 		}
-		
 	}
-	
-	private void checkChecked(){
-		
-		//int []check = new int [100];
-		check.add(savedints[0]);
-		int m=0;
-		for(int i=1;i<savedints.length;i++){
-			if(savedints[i]!=savedints[i-1]){
-				check.add(savedints[i]);
-				mainListView.setItemChecked(savedints[i], true);
-				++m;
-			}
-		}
 
-		
-		
-	}
-	private void saveInFile(String text) {
+	//Saves todoList to file called FILENAME
+	private void saveInFile() {
 		try {
-			FileOutputStream fos = openFileOutput(FILENAME,
-					Context.MODE_APPEND);
-			fos.write(new String(text+"\n")
-					.getBytes());
-			fos.close();
-
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-	private void saveInFile2(int x) {
-		try {
-			String y=String.valueOf(x); 
-			FileOutputStream fos = openFileOutput(FILENAME2,
-					Context.MODE_APPEND);
+			FileOutputStream fos = openFileOutput(FILENAME,0);
+			OutputStreamWriter osw = new OutputStreamWriter(fos);
 			
-			fos.write(new String(y+"\n").getBytes());
-			fos.close();
+			Gson gson=new GsonBuilder().create();
+			gson.toJson(toDoList,osw);
+			osw.flush();
+			osw.close();
 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -267,26 +195,66 @@ public boolean onOptionsItemSelected(MenuItem item) {
 			e.printStackTrace();
 		}
 	}
-	*/
+
+
+	//this is called when the app starts 
+	//it initializes the to do list and the screen
 	@Override 
 	public void onStart(){
 		super.onStart();
-		//put load here
+		loadFromFile();
+		
+		if(toDoList==null){
+			toDoList= new ArrayList<ToDo>();
+		}
+		
 		listAdapter= new ArrayAdapter<ToDo>(this,android.R.layout.simple_list_item_multiple_choice, toDoList);
-		mainListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-		   // checkChecked();
-		mainListView.setAdapter( listAdapter ); 
-		registerForContextMenu(mainListView);
-	}
-	public void refreshScreen(){
-	    mainListView = (ListView) findViewById( R.id.listView );  
+		listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+	
+		listView.setAdapter( listAdapter ); 
+		registerForContextMenu(listView);
 		
-	    listAdapter = new ArrayAdapter<ToDo>(this,android.R.layout.simple_list_item_multiple_choice, toDoList);  
-	    mainListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-	   // checkChecked();
-	    mainListView.setAdapter( listAdapter ); 
-	    registerForContextMenu(mainListView);
+		checkChecked();
+		loadArchiveFromFile();
+		listAdapter.notifyDataSetChanged();
+	}
+	
+	//onResume is for when you come back to this screen 
+	//this one loads the edited to do list and changes the screen 
+	//accordingly
+	public void onResume(){
+		super.onResume();
+		loadFromFile();
+		listAdapter.notifyDataSetChanged();
+	}
+	
+	//loads the archive list from file FILENAME2
+	private void loadArchiveFromFile() {
+		try {
+			FileInputStream fis = openFileInput(FILENAME2);
+			InputStreamReader isr = new InputStreamReader(fis);
+			
+			//from http://www.javacreed.com/simple-gson-example/
+			
+			Gson gson= new GsonBuilder().create();
+			mainarchived=gson.fromJson(isr, new TypeToken <ArrayList<ToDo>>(){}.getType());
+			
+		}
+		//catch catches when the file can't be found
+		catch (FileNotFoundException e){
+			e.printStackTrace();
+		}
 		
 	}
+
+
+//When this is called is makes every ToDo where isChecked == true appears checked
+public void checkChecked(){
+	for (int i=0;i<toDoList.size();i++){
+		if(toDoList.get(i).getCheck()==true){
+			listView.setItemChecked(i, true);
+		}
+	}
+}
 }
 	

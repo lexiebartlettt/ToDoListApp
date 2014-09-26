@@ -10,23 +10,18 @@
         android:layout_height="200dp" >
     </ListView>
      <Button
-        android:id="@+id/unarchiveSelected"
+        android:id="@+id/Unarchive"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="0.2"
-        android:text="Unarchive Selected" />
+        android:text="Unarchive" />
     
         <Button
-        android:id="@+id/EmailAll"
+        android:id="@+id/EmailArchive"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="0.2"
-        android:text="Email All" />
-        <Button
-        android:id="@+id/emailSelect"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="0.2"
-        android:text="Email Selected" />
+        android:text="Email" />
+
 
 </LinearLayout>

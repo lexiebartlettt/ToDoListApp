@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/emailItm"
-          android:title="Select Email" />
+          android:title="Email Select" />
     <item android:id="@+id/archiveItm"
-          android:title="Select Archive" />
-    
+          android:title="Archive Select" />
+  	<item android:id="@+id/summary"
+          android:title="Summary" />
+
 </menu>

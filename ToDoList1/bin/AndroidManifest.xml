@@ -27,6 +27,9 @@
         <activity android:name=".EmailScreen1"></activity>
         <activity android:name=".ArchiveScreen"></activity>
         <activity android:name=".ViewArchive"></activity>
+        <activity android:name=".Summary"></activity>
+        <activity android:name=".UnarchiveScreen"></activity>
+        <activity android:name=".EmailArchived"></activity>
     </application>
 
 </manifest>
